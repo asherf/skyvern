@@ -24,7 +24,7 @@ from skyvern.exceptions import (
     BitwardenSyncError,
     BitwardenUnlockError,
 )
-from skyvern.forge.sdk.api.aws import aws_client
+from skyvern.forge.sdk.api.aws import AsyncAWSClient
 from skyvern.forge.sdk.core.aiohttp_helper import aiohttp_delete, aiohttp_get_json, aiohttp_post
 from skyvern.forge.sdk.schemas.credentials import (
     CredentialItem,
@@ -841,7 +841,7 @@ class BitwardenService:
             raise e
 
     @staticmethod
-    async def _get_skyvern_auth_master_password() -> str:
+    async def _get_skyvern_auth_master_password(aws_client: AsyncAWSClient) -> str:
         master_password = settings.SKYVERN_AUTH_BITWARDEN_MASTER_PASSWORD
         if not master_password:
             master_password = await aws_client.get_secret(BitwardenConstants.SKYVERN_AUTH_BITWARDEN_MASTER_PASSWORD)
@@ -850,7 +850,7 @@ class BitwardenService:
         return master_password
 
     @staticmethod
-    async def _get_skyvern_auth_organization_id() -> str:
+    async def _get_skyvern_auth_organization_id(aws_client: AsyncAWSClient) -> str:
         bw_organization_id = settings.SKYVERN_AUTH_BITWARDEN_ORGANIZATION_ID
         if not bw_organization_id:
             bw_organization_id = await aws_client.get_secret(BitwardenConstants.SKYVERN_AUTH_BITWARDEN_ORGANIZATION_ID)
@@ -859,7 +859,7 @@ class BitwardenService:
         return bw_organization_id
 
     @staticmethod
-    async def _get_skyvern_auth_client_id() -> str:
+    async def _get_skyvern_auth_client_id(aws_client: AsyncAWSClient) -> str:
         client_id = settings.SKYVERN_AUTH_BITWARDEN_CLIENT_ID
         if not client_id:
             client_id = await aws_client.get_secret(BitwardenConstants.SKYVERN_AUTH_BITWARDEN_CLIENT_ID)
@@ -868,7 +868,7 @@ class BitwardenService:
         return client_id
 
     @staticmethod
-    async def _get_skyvern_auth_client_secret() -> str:
+    async def _get_skyvern_auth_client_secret(aws_client: AsyncAWSClient) -> str:
         client_secret = settings.SKYVERN_AUTH_BITWARDEN_CLIENT_SECRET
         if not client_secret:
             client_secret = await aws_client.get_secret(BitwardenConstants.SKYVERN_AUTH_BITWARDEN_CLIENT_SECRET)
@@ -911,11 +911,12 @@ class BitwardenService:
 
     @staticmethod
     async def _get_skyvern_auth_secrets() -> Tuple[str, str, str, str]:
+        aws_client = AsyncAWSClient()
         master_password, bw_organization_id, client_id, client_secret = await asyncio.gather(
-            BitwardenService._get_skyvern_auth_master_password(),
-            BitwardenService._get_skyvern_auth_organization_id(),
-            BitwardenService._get_skyvern_auth_client_id(),
-            BitwardenService._get_skyvern_auth_client_secret(),
+            BitwardenService._get_skyvern_auth_master_password(aws_client),
+            BitwardenService._get_skyvern_auth_organization_id(aws_client),
+            BitwardenService._get_skyvern_auth_client_id(aws_client),
+            BitwardenService._get_skyvern_auth_client_secret(aws_client),
         )
         return master_password, bw_organization_id, client_id, client_secret
 
